@@ -80,8 +80,8 @@ npm run dev
 
 由于项目采用了数据驱动架构，**您无需修改任何 Vue 视图代码**，只需修改以下两个文件即可完成私人定制：
 
-* **修改 `src/data/profile.js**`：替换 `background`（全局背景）、`avatar`（头像）、`name`（网名）、`skills`（技能标签）以及 `socials`（QQ/邮箱）。
-* **修改 `src/data/projects.js**`：按需增删您的实战项目。该文件支持配置 `techPoints`（列表）和 `articleBlocks`（支持文本与代码片段长文解析）。
+* 修改 `src/data/profile.js`：替换 `background`（全局背景）、`avatar`（头像）、`name`（网名）、`skills`（技能标签）以及 `socials`（QQ/邮箱）。
+* 修改 `src/data/projects.js`：按需增删您的实战项目。该文件支持配置 `techPoints`（列表）和 `articleBlocks`（支持文本与代码片段长文解析）。
 
 > **💡 建议**：推荐将图片资源上传至七牛云、阿里云 OSS 等对象存储，并在代码中使用 CDN 加速链接，以获得最佳加载体验。
 
@@ -93,33 +93,34 @@ npm run dev
 
 ### 方式一：Docker 容器化部署（推荐）
 
-编写 `Dockerfile` 基于 Nginx 轻量级运行：
+本项目已内置了生产级别的 Docker 部署配置，并**解决了 Vue Router History 模式下刷新页面导致 404 的问题**。
 
-```dockerfile
-# 第一阶段：Node 编译构建
-FROM node:22-alpine AS builder
-WORKDIR /app
-COPY package*.json ./
-RUN npm install
-COPY . .
-RUN npm run build
+项目中包含以下核心部署文件：
+* `Dockerfile`：采用多阶段构建（Node.js 编译 + Nginx 运行），保证最终镜像体积极致轻量。
+* `default.conf`：自定义 Nginx 配置，内置 `try_files` 指令，优雅接管前端路由。
 
-# 第二阶段：Nginx 运行环境
-FROM nginx:alpine
-RUN rm -rf /usr/share/nginx/html/*
-COPY --from=builder /app/dist /usr/share/nginx/html
-EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
+**构建与运行步骤：**
 
+1. 在项目根目录（`Dockerfile` 所在目录）执行镜像构建：
+
+```bash
+docker build -t devops-portfolio .
 ```
+
+2. 启动容器（后台运行，并将容器的 80 端口映射到本机的 8080 端口）：
+
+```bash
+docker run -d -p 8080:80 --name my-portfolio devops-portfolio
+```
+
+启动成功后，浏览器访问 http://localhost:8080 即可查看您的作品集。不管怎么跳转、刷新，Nginx 都会稳稳地将路由交由 Vue 处理。
 
 ### 方式二：Serverless / 对象存储托管
 
-直接运行打包命令：
+如果不想自己维护服务器，也可以直接编译纯静态文件：
 
 ```bash
 npm run build
-
 ```
 
-随后将生成的 `dist` 目录内的所有文件，上传至 七牛云、腾讯云 COS、Vercel 或 GitHub Pages 即可享受零服务器成本的全球极速访问。
+随后将生成的 dist 目录内的所有文件，上传至 七牛云、腾讯云 COS、Vercel 或 GitHub Pages，即可享受零服务器成本的全球极速访问(注意：如果使用对象存储托管，需要在平台控制台开启静态网站托管，并配置错误页面/索引页面均指向 index.html)。
