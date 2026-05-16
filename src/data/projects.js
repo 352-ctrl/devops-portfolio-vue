@@ -1,7 +1,90 @@
-// src/data/projects.js
 export const projects = [
   { 
     id: '1', 
+    title: 'DevOps Portfolio：基于 K8s 与 JAMstack 的云原生作品集', 
+    github: 'https://github.com/352-ctrl/devops-portfolio-vue',
+    description: '采用 Vue 3 与 Vite 构建的响应式纯静态数据驱动单页应用。生产环境全面拥抱 Kubernetes (K8s) 云原生架构，通过 Nginx Ingress 实现七层负载均衡与全站 HTTPS 强制跳转。配置了精细化的 Pod 资源配额 (QoS) 与历史版本保留策略，实现前端服务的高可用与极致访问体验。', 
+    cover: 'https://qiniu.ctrlblog.cn/covers/portfolio.png',
+    tags: [
+      { name: "Kubernetes", color: "#326CE5" },
+      { name: "Vue 3", color: "#4FC08D" },
+      { name: "Ingress", color: "#009639" },
+      { name: "JAMstack", color: "#FF6C37" }
+    ],
+    articleBlocks: [
+      {
+        type: 'text',
+        title: '🎯 架构解耦与极客化前端实践',
+        content: '项目立项之初决定抛弃臃肿的后端，采用 JAMstack 架构实现彻底的前端纯静态化。所有的个人信息、项目列表均通过静态 JS 配置文件动态驱动，实现了数据与视图的完全解耦。为了契合 DevOps 的极客主题，除了沉浸式的 Glassmorphism UI 设计，我还在路由守卫中加入了特色逻辑：根据页面状态动态切换浏览器 Title 为 "200 OK" 或 "404 Not Found" 等 HTTP 状态码语义，从细节处强化工程师属性。'
+      },
+      {
+        type: 'text',
+        title: '☸️ 云原生基石：K8s 容器编排与资源治理',
+        content: '在服务交付层，本项目的生产环境完全依托于 Kubernetes 架构。为了保障高可用性，配置了 3 个副本 (Replicas) 并设置了 revisionHistoryLimit 以支持版本的快速回滚。在运维实践中，我极其重视集群资源的精细化治理：在 Deployment 中为 Pod 声明了严格的 Requests 与 Limits（CPU 50m~200m，内存 64Mi~128Mi）。这不仅防止了潜在的内存泄漏导致的节点雪崩，也为集群的 QoS（服务质量）分类和后续可能的 HPA 弹性伸缩打下了标准的基础。'
+      },
+      {
+        type: 'code',
+        title: 'Kubernetes Deployment 资源管控策略源码：',
+        language: 'yaml',
+        code: `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: portfolio-deployment
+spec:
+  replicas: 3
+  revisionHistoryLimit: 3
+  template:
+    spec:
+      imagePullSecrets:
+      - name: aliyun-acr-secret
+      containers:
+      - name: portfolio-web
+        image: crpi-***.cn-guangzhou.personal.cr.aliyuncs.com/ctrl-devops/portfolio:latest
+        resources:
+          requests:
+            cpu: "50m"
+            memory: "64Mi"
+          limits:
+            cpu: "200m"
+            memory: "128Mi"`
+      },
+      {
+        type: 'text',
+        title: '🔒 七层流量网关：Ingress 路由分发与安全加密',
+        content: '网络接入层放弃了传统 NodePort 的粗放暴露模式，转而采用 Nginx Ingress 统一接管七层入口流量。通过定义 Ingress 规则，将 ctrlblog.cn 域名的访问请求精准路由至后端的 Service 集群。为了保障数据传输的绝对安全，预先通过 Secret 挂载了 TLS 证书，并利用 Annotations 注入了 \`force-ssl-redirect: "true"\` 指令，在边缘网关节点直接实现了 HTTP 到 HTTPS 的全站强制无感重定向，构建了企业级的安全访问链路。'
+      },
+      {
+        type: 'code',
+        title: '流量网关 Ingress 路由与强制 SSL 配置：',
+        language: 'yaml',
+        code: `apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: portfolio-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+spec:
+  ingressClassName: "nginx"
+  tls:
+  - hosts:
+    - ctrlblog.cn
+    secretName: ctrlblog-tls-secret
+  rules:
+  - host: ctrlblog.cn
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: portfolio-svc
+            port:
+              number: 80`
+      }
+    ]
+  },
+  { 
+    id: '2', 
     title: 'CtrlBlog：云原生全栈企业级博客系统', 
     github: 'https://github.com/352-ctrl/ctrl-blog',
     description: '基于 Spring Boot 3 与 Vue 3 构建的前后端分离现代化博客。系统深度集成 Spring AI 智能化摘要、Quartz 定时调度与 DFA 敏感词风控过滤。生产环境采用 Docker Swarm 跨主机 Overlay 网络架构，配合 GitHub Actions 实现业务级的 CI/CD 零停机滚动发布 (Rolling Update)。', 
