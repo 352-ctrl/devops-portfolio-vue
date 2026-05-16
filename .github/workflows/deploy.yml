@@ -1,0 +1,53 @@
+name: DevOps CI/CD Pipeline
+
+# 当主分支有代码 push 时自动触发
+on:
+  push:
+    branches: ["main"]
+
+# 环境变量定义：路由与命名配置(请根据你自己的阿里云实际情况修改以下值)
+env:
+  REGISTRY: crpi-6ynzgtwchj0ofn0n.cn-guangzhou.personal.cr.aliyuncs.com
+  NAMESPACE: ctrl-devops
+  IMAGE_NAME: portfolio
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      # 第一步：获取代码
+      - name: 1. 检出仓库代码
+        uses: actions/checkout@v4
+      
+      # 第二步：登录镜像仓库
+      - name: 2. 登录阿里云 ACR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.ALIYUN_USER }}
+          password: ${{ secrets.ALIYUN_PWD }}
+
+      # 第三步：打包并推送
+      - name: 3. 构建并推送 Docker 镜像
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/${{ env.IMAGE_NAME }}:latest
+            ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+
+      # 第四步：远程执行部署命令
+      - name: 4. 远程登录服务器并更新 K3s
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          password: ${{ secrets.SERVER_PWD }}
+          script: |
+            # 强制 K3s 的 portfolio-deployment 控制器重新拉取 latest 镜像并滚动更新
+            kubectl rollout restart deployment portfolio-deployment
+
+            # 实时查看更新状态，直到所有 Pod 替换完成
+            kubectl rollout status deployment portfolio-deployment
